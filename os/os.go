@@ -15,30 +15,19 @@ func GetPsAuxCount(pn string) int {
 	ps := exec.Command("ps", "aux")
 	grep := exec.Command("grep", pn)
 	wc := exec.Command("wc", "-l")
-	var out bytes.Buffer
-	grep.Stdin, _ = ps.StdoutPipe()
-	wc.Stdin, _ = grep.StdoutPipe()
-	wc.Stdout = &out
 
-	if err := wc.Start(); err != nil {
-		log.Fatal("wc start", err)
-	}
-	if err := grep.Start(); err != nil {
-		log.Fatal("grep start", err)
-	}
-	if err := ps.Run(); err != nil {
-		log.Fatal("ps run", err)
-	}
-	if err := grep.Wait(); err != nil {
-		log.Fatal("grep wait:", err)
-	}
-	if err := wc.Wait(); err != nil {
-		log.Fatal("wc wait", err)
+	psRes := ExecuteCmd(ps, "")
+	grepRes := ExecuteCmd(grep, psRes)
+	if grepRes == "" {
+		return 0
 	}
 
-	result, err := strconv.Atoi(strings.TrimSpace(out.String()))
+	// pass the `grep` result to `wc` input, and run it
+	wcRes := ExecuteCmd(wc, grepRes)
+
+	result, err := strconv.Atoi(strings.TrimSpace(wcRes))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("strconv.Atoi error: ", err)
 	}
 
 	// Since ```grep``` itself is also included in the results

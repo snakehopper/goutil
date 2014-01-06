@@ -47,6 +47,23 @@ func GetPsAuxCount(pn string) int {
 	return result - 1
 }
 
+// Pass the `pipe` as `cmd` input, and run it
+// It returns the result of cmd
+func ExecuteCmd(cmd *exec.Cmd, pipe string) string {
+	var out bytes.Buffer
+
+	if pipe != "" {
+		cmd.Stdin = strings.NewReader(pipe)
+	}
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		log.Println("ooops:", err.Error())
+		return ""
+	}
+
+	return out.String()
+}
+
 //Check whether/proc/meminfo MemFree/MemTotal is less than $mb MB
 func IsFreeMemoryLessThanMB(mb int) bool {
 	if stat, err := linuxproc.ReadMemInfo("/proc/meminfo"); err != nil {

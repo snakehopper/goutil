@@ -1,6 +1,7 @@
 package os
 
 import (
+	"os/exec"
 	"testing"
 )
 
@@ -18,4 +19,14 @@ func TestGetPsAuxCount(t *testing.T) {
 
 func TestIsFreeMemoryLessThan100MB(t *testing.T) {
 	IsFreeMemoryLessThanMB(100)
+}
+
+func TestExecuteCmd(t *testing.T) {
+	const expected = "hello\n"
+	c := exec.Command("echo", "hello")
+
+	if actual := ExecuteCmd(c, ""); actual != expected {
+		t.Log(len(actual), len(expected))
+		t.Errorf("ExecuteCmd(%s) expected %s, but actual %s", c.Path, expected, actual)
+	}
 }

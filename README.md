@@ -1,6 +1,15 @@
 goutil
 ======
 
+## crypto
+``` go
+var h = HashUtils{Key: k}
+cipherText := h.Encrypt(plainText)
+fmt.Println(h.HasMatch(plainText, cipherText))
+```
+
+Output: _true_
+
 ## os
 Some( _most_ ) related function wrapper from linux environment
 

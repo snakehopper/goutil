@@ -13,9 +13,9 @@ IsFreeMemoryLessThanMB = ```cat /proc/meminfo | grep MemFree```
 
 ```fmt.Println(ByteSize(1), ByteSize(10), ByteSize(1000), ByteSize(1024))```
 
-Output: _fmt.Println(ByteSize(1), ByteSize(10), ByteSize(1000), ByteSize(1024))_
+Output: _1.00B 10.00B 1000.00B 1.00KB_
 
 ```fmt.Println(2.5*MB, ByteSize(1e13), 1*MB==1024*KB)```
 
-OUtput: _fmt.Println(2.5*MB, ByteSize(1e13), 1*MB==1024*KB)_
+Output: _2.50MB 9.09TB true_
 

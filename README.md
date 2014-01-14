@@ -17,7 +17,7 @@ GetPsAuxCount = ```ps aux | grep xx | wc -l```
 
 IsFreeMemoryLessThanMB = ```cat /proc/meminfo | grep MemFree```
 
-## eff_bytesize
+#### eff_bytesize
 [ref](http://golang.org/doc/progs/eff_bytesize.go)
 
 ```fmt.Println(ByteSize(1), ByteSize(10), ByteSize(1000), ByteSize(1024))```

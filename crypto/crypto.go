@@ -10,6 +10,10 @@ type HashUtils struct {
 	Key string
 }
 
+func NewHash(k string) *HashUtils {
+	return &HashUtils{Key: k}
+}
+
 // Encrypt encrypts plaintext with the key.
 // Returned ciphertext result
 func (u *HashUtils) Encrypt(plain string) string {

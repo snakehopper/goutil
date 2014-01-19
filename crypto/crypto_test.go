@@ -5,6 +5,15 @@ import (
 	"testing"
 )
 
+func TestNewHash(t *testing.T) {
+	const want = "OGU2M2ExZmI3"
+	h := NewHash(want)
+
+	if !reflect.DeepEqual(h.Key, want) {
+		t.Errorf("NewHash returned %v, want %v", h.Key, want)
+	}
+}
+
 func TestHashUtils_Encrypt(t *testing.T) {
 	const k = "OGU2M2ExZmI3"
 	plainText := "123"

@@ -8,11 +8,13 @@ import (
 )
 
 // ReturnJson return json response with provided struct v
-func ReturnJson(w http.ResponseWriter, v interface{}) {
+func ReturnJson(w http.ResponseWriter, v interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 
-	js, _ := json.MarshalIndent(v, "", "\t")
+	js, err := json.MarshalIndent(v, "", "\t")
 	fmt.Fprintf(w, string(js))
+
+	return err
 }
 
 // GetUrl fetch an url request with GET-Method. If a nil httpClient is

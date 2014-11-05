@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // ReturnJson return json response with provided struct v
@@ -15,6 +16,17 @@ func ReturnJson(w http.ResponseWriter, v interface{}) error {
 	fmt.Fprintf(w, string(js))
 
 	return err
+}
+
+func ReturnAcceptJsonOrText(w http.ResponseWriter, r *http.Request, plainText string, jsonResp interface{}) error {
+	h := r.Header
+	accept := h.Get("Accept")
+	if strings.HasPrefix(accept, "application/json") {
+		return ReturnJson(w, jsonResp)
+	}
+
+	fmt.Fprintf(w, plainText)
+	return nil
 }
 
 // GetUrl fetch an url request with GET-Method. If a nil httpClient is

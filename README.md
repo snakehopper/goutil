@@ -10,6 +10,15 @@ fmt.Println(h.HasMatch(plainText, cipherText))
 
 Output: _true_
 
+## user
+``` go
+var d = "0234"
+var vd = NewValidateDigit(s)
+fmt.Println(vd.HasMatch("234"))
+```
+
+Output: _true_
+
 ## os
 Some( _most_ ) related function wrapper from linux environment
 

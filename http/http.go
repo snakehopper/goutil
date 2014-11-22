@@ -48,3 +48,17 @@ func GetUrl(client *http.Client, u string) string {
 	}
 	return string(body)
 }
+
+func GetJson(client *http.Client, url string, v interface{}) error {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	d := json.NewDecoder(resp.Body)
+
+	return d.Decode(v)
+}

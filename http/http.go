@@ -13,7 +13,7 @@ func ReturnJson(w http.ResponseWriter, v interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	js, err := json.MarshalIndent(v, "", "\t")
-	fmt.Fprintf(w, string(js))
+	fmt.Fprint(w, string(js))
 
 	return err
 }
@@ -25,7 +25,7 @@ func ReturnAcceptJsonOrText(w http.ResponseWriter, r *http.Request, plainText st
 		return ReturnJson(w, jsonResp)
 	}
 
-	fmt.Fprintf(w, plainText)
+	fmt.Fprint(w, plainText)
 	return nil
 }
 

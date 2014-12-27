@@ -6,7 +6,11 @@ import (
 )
 
 func MD5Hash(plain string) string {
+	return MD5HashRaw([]byte(plain))
+}
+
+func MD5HashRaw(b []byte) string {
 	hasher := md5.New()
-	hasher.Write([]byte(plain))
+	hasher.Write(b)
 	return hex.EncodeToString(hasher.Sum(nil))
 }

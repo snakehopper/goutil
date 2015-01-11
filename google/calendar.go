@@ -121,23 +121,27 @@ func CreateCalendar(oauthClient *http.Client, name, tz string) (string, error) {
 
 	return calRes.Id, nil
 }
-func (c *Calendar) PutACL(owner, googleGroup string, writer []string) error {
-	acl := &calendar.AclRule{Role: "owner",
-		Scope: &calendar.AclRuleScope{"group", googleGroup}}
+func (c *Calendar) AddCalendarUserACL(role, scopeType, scopeValue string) error {
+	acl := &calendar.AclRule{Role: role,
+		Scope: &calendar.AclRuleScope{scopeType, scopeValue}}
 
+	if _, err := c.svc.Acl.Insert(c.Id, acl).Do(); err != nil {
+		return err
+	}
+	return nil
+}
+func (c *Calendar) DeleteCalendarUserACL(writer string) error {
+	rule := fmt.Sprintf("user:%s", writer)
+	return c.svc.Acl.Delete(c.Id, rule).Do()
+}
+func (c *Calendar) PutACL(owner, googleGroup string, writer []string) error {
 	if owner != "" {
-		acl.Role = "owner"
-		acl.Scope.Type = "user"
-		acl.Scope.Value = owner
-		if _, err := c.svc.Acl.Insert(c.Id, acl).Do(); err != nil {
+		if err := c.AddCalendarUserACL("owner", "user", owner); err != nil {
 			return err
 		}
 	}
 	if googleGroup != "" {
-		acl.Role = "writer"
-		acl.Scope.Type = "group"
-		acl.Scope.Value = googleGroup
-		if _, err := c.svc.Acl.Insert(c.Id, acl).Do(); err != nil {
+		if err := c.AddCalendarUserACL("writer", "group", googleGroup); err != nil {
 			return err
 		}
 	}
@@ -145,10 +149,7 @@ func (c *Calendar) PutACL(owner, googleGroup string, writer []string) error {
 		if wt == "" {
 			continue
 		}
-		acl.Role = "writer"
-		acl.Scope.Type = "user"
-		acl.Scope.Value = wt
-		if _, err := c.svc.Acl.Insert(c.Id, acl).Do(); err != nil {
+		if err := c.AddCalendarUserACL("writer", "user", wt); err != nil {
 			return err
 		}
 	}

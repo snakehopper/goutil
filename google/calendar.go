@@ -4,6 +4,7 @@ import (
 	"fmt"
 	calendar "google.golang.org/api/calendar/v3"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -170,4 +171,27 @@ func (c *Calendar) UpdateInfo(summary, description, location string) (*calendar.
 	}
 
 	return c.svc.Calendars.Patch(c.Id, cal).Do()
+}
+
+//WatchEvents return calendar resource id, expiration in millisecond, and error
+func (c *Calendar) WatchEvents(uuid, token string, webhook url.URL) (string, int64, error) {
+	ch := &calendar.Channel{
+		Id:      uuid,
+		Token:   token,
+		Address: webhook.String(),
+		Type:    "web_hook",
+	}
+	resp, err := c.svc.Events.Watch(c.Id, ch).Do()
+	if err != nil {
+		return "", 0, err
+	}
+	return resp.ResourceId, resp.Expiration, nil
+}
+func (c *Calendar) StopWatch(uuid, resource, token string) error {
+	ch := &calendar.Channel{
+		Id:         uuid,
+		ResourceId: resource,
+		Token:      token,
+	}
+	return c.svc.Channels.Stop(ch).Do()
 }

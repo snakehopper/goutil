@@ -174,12 +174,13 @@ func (c *Calendar) UpdateInfo(summary, description, location string) (*calendar.
 }
 
 //WatchEvents return calendar resource id, expiration in millisecond, and error
-func (c *Calendar) WatchEvents(uuid, token string, webhook url.URL) (string, int64, error) {
+func (c *Calendar) WatchEvents(uuid, token string, expire int64, webhook url.URL) (string, int64, error) {
 	ch := &calendar.Channel{
-		Id:      uuid,
-		Token:   token,
-		Address: webhook.String(),
-		Type:    "web_hook",
+		Id:         uuid,
+		Token:      token,
+		Address:    webhook.String(),
+		Expiration: expire,
+		Type:       "web_hook",
 	}
 	resp, err := c.svc.Events.Watch(c.Id, ch).Do()
 	if err != nil {

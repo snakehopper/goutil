@@ -10,7 +10,7 @@ import (
 
 // ReturnJson return json response with provided struct v
 func ReturnJson(w http.ResponseWriter, v interface{}) error {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	js, err := json.MarshalIndent(v, "", "\t")
 	fmt.Fprint(w, string(js))

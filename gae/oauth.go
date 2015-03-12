@@ -1,13 +1,19 @@
 package gae
 
 import (
-	"appengine"
-	"github.com/golang/oauth2/google"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/appengine/urlfetch"
 	"net/http"
 )
 
-func OAuthClient(c appengine.Context, scope []string) *http.Client {
-	config := google.NewAppEngineConfig(c, scope)
-
-	return &http.Client{Transport: config.NewTransport()}
+func OAuthClient(c context.Context, scope ...string) *http.Client {
+	hc := &http.Client{
+		Transport: &oauth2.Transport{
+			Source: google.AppEngineTokenSource(c, scope...),
+			Base:   &urlfetch.Transport{Context: c},
+		},
+	}
+	return hc
 }

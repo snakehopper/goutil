@@ -3,17 +3,21 @@ package gae
 import (
 	"appengine"
 	"appengine/blobstore"
-	"appengine/file"
-	"code.google.com/p/go.net/context"
 	"encoding/json"
 	"fmt"
-	"github.com/golang/oauth2/google"
-	"github.com/snakehopper/gcloud-golang/storage"
-	"google.golang.org/cloud"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"strings"
+
+	"golang.org/x/net/context"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/appengine/file"
+	"google.golang.org/appengine/urlfetch"
+	"google.golang.org/cloud"
+	"google.golang.org/cloud/storage"
 )
 
 type GStorage struct {
@@ -26,14 +30,20 @@ type GStorage struct {
 }
 
 func NewGStorage(c appengine.Context) (*GStorage, error) {
-	bucketName, err := file.DefaultBucketName(c)
+	ctxFromGAE := c.(context.Context)
+	bucketName, err := file.DefaultBucketName(ctxFromGAE)
 	if err != nil {
 		c.Errorf("failed to get default GCS bucket name: %v", err)
 		return nil, err
 	}
 
-	config := google.NewAppEngineConfig(c, []string{storage.ScopeFullControl})
-	ctx := cloud.NewContext(appengine.AppID(c), &http.Client{Transport: config.NewTransport()})
+	hc := &http.Client{
+		Transport: &oauth2.Transport{
+			Source: google.AppEngineTokenSource(ctxFromGAE, storage.ScopeFullControl),
+			Base:   &urlfetch.Transport{Context: ctxFromGAE},
+		},
+	}
+	ctx := cloud.NewContext(appengine.AppID(c), hc)
 
 	gs := &GStorage{
 		c:      c,
@@ -44,10 +54,8 @@ func NewGStorage(c appengine.Context) (*GStorage, error) {
 }
 
 func (gs *GStorage) CreateImageFile(fileName string, img multipart.File, ct string) error {
-	wc := storage.NewWriter(gs.ctx, gs.bucket, fileName, &storage.Object{
-		ContentType: ct,
-		//Metadata:    map[string]string{},
-	})
+	wc := storage.NewWriter(gs.ctx, gs.bucket, fileName)
+	wc.ContentType = ct
 
 	b, err := ioutil.ReadAll(img)
 	if err != nil {
@@ -62,9 +70,8 @@ func (gs *GStorage) CreateImageFile(fileName string, img multipart.File, ct stri
 		return fmt.Errorf("createFile: unable to close bucket %q, file %q: %v", gs.bucket, fileName, err)
 	}
 	// Wait for the file to be fully written.
-	_, err = wc.Object()
-	if err != nil {
-		return fmt.Errorf("createFile: unable to finalize file from bucket %q, file %q: %v", gs.bucket, fileName, err)
+	if obj := wc.Object(); obj == nil {
+		return fmt.Errorf("createFile: unable to finalize file from bucket %q, file %q", gs.bucket, fileName)
 	}
 
 	return nil
@@ -72,11 +79,9 @@ func (gs *GStorage) CreateImageFile(fileName string, img multipart.File, ct stri
 
 // CreateFile creates a file in Google Cloud Storage.
 func (gs *GStorage) CreateJsonFile(fileName string, v interface{}) error {
-	wc := storage.NewWriter(gs.ctx, gs.bucket, fileName, &storage.Object{
-		ContentType:  "application/json",
-		CacheControl: "private, max-age=0, no-transform",
-		Metadata:     map[string]string{},
-	})
+	wc := storage.NewWriter(gs.ctx, gs.bucket, fileName)
+	wc.ContentType = "application/json"
+	wc.CacheControl = "private, max-age=0, no-transform"
 
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -91,9 +96,8 @@ func (gs *GStorage) CreateJsonFile(fileName string, v interface{}) error {
 		return fmt.Errorf("createFile: unable to close bucket %q, file %q: %v", gs.bucket, fileName, err)
 	}
 	// Wait for the file to be fully written.
-	_, err = wc.Object()
-	if err != nil {
-		return fmt.Errorf("createFile: unable to finalize file from bucket %q, file %q: %v", gs.bucket, fileName, err)
+	if obj := wc.Object(); obj == nil {
+		return fmt.Errorf("createFile: unable to finalize file from bucket %q, file %q", gs.bucket, fileName)
 	}
 
 	return nil
@@ -106,8 +110,16 @@ func (gs *GStorage) CopyBlob(src appengine.BlobKey, v ImageBlober) (appengine.Bl
 	}
 
 	var srcName = sObj.Name
-	sObj.Name = v.BucketPath()
-	_, err = storage.CopyObject(gs.ctx, gs.bucket, srcName, sObj)
+	attrs := storage.ObjectAttrs{
+		Name:            v.BucketPath(),
+		ContentType:     sObj.ContentType,
+		ContentLanguage: sObj.ContentLanguage,
+		ContentEncoding: sObj.ContentEncoding,
+		CacheControl:    sObj.CacheControl,
+		ACL:             sObj.ACL,
+		Metadata:        sObj.Metadata,
+	}
+	_, err = storage.CopyObject(gs.ctx, gs.bucket, srcName, gs.bucket, attrs)
 
 	gcsFilename := "/" + strings.Join([]string{"gs", sObj.Bucket, sObj.Name}, "/")
 	return blobstore.BlobKeyForFile(gs.c, gcsFilename)

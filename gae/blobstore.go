@@ -1,13 +1,13 @@
 package gae
 
 import (
-	"appengine"
-	"appengine/blobstore"
-	"appengine/datastore"
-	"appengine/file"
-	"appengine/urlfetch"
 	"bytes"
 	"fmt"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/blobstore"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/file"
+	"google.golang.org/appengine/urlfetch"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -43,7 +43,7 @@ func createFromPart(name string, w *multipart.Writer, h *multipart.Part) (io.Wri
 	return w.CreatePart(newHeader)
 }
 
-func PutBlob(c appengine.Context, v ImageBlober, r *http.Request) error {
+func PutBlob(c context.Context, v ImageBlober, r *http.Request) error {
 	bucket, err := file.DefaultBucketName(c)
 	if err != nil {
 		return err

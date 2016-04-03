@@ -31,6 +31,7 @@ func NewCalendar(oauthClient *http.Client, id, tz string) (*Calendar, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	loc, err := time.LoadLocation(tz)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,7 @@ func CreateCalendar(oauthClient *http.Client, name, tz string) (string, error) {
 }
 func (c *Calendar) AddCalendarUserACL(role, scopeType, scopeValue string) error {
 	acl := &calendar.AclRule{Role: role,
-		Scope: &calendar.AclRuleScope{scopeType, scopeValue}}
+		Scope: &calendar.AclRuleScope{Type: scopeType, Value: scopeValue}}
 
 	if _, err := c.svc.Acl.Insert(c.Id, acl).Do(); err != nil {
 		return err

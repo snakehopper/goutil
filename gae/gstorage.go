@@ -1,23 +1,23 @@
 package gae
 
 import (
-	"appengine"
-	"appengine/blobstore"
-	"appengine/file"
 	"code.google.com/p/go.net/context"
 	"encoding/json"
 	"fmt"
+	"github.com/golang/oauth2"
 	"github.com/golang/oauth2/google"
 	"github.com/snakehopper/gcloud-golang/storage"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/blobstore"
+	"google.golang.org/appengine/file"
+	"google.golang.org/appengine/log"
 	"google.golang.org/cloud"
 	"io/ioutil"
 	"mime/multipart"
-	"net/http"
 	"strings"
 )
 
 type GStorage struct {
-	c   appengine.Context
 	ctx context.Context
 	// bucket is the Google Cloud Storage bucket name used for the GStorage.
 	bucket string
@@ -25,18 +25,21 @@ type GStorage struct {
 	failed bool
 }
 
-func NewGStorage(c appengine.Context) (*GStorage, error) {
+func NewGStorage(c context.Context) (*GStorage, error) {
 	bucketName, err := file.DefaultBucketName(c)
 	if err != nil {
-		c.Errorf("failed to get default GCS bucket name: %v", err)
+		log.Errorf(c, "failed to get default GCS bucket name: %v", err)
 		return nil, err
 	}
 
-	config := google.NewAppEngineConfig(c, []string{storage.ScopeFullControl})
-	ctx := cloud.NewContext(appengine.AppID(c), &http.Client{Transport: config.NewTransport()})
+	client, err := google.DefaultClient(oauth2.NoContext, storage.ScopeFullControl)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := cloud.NewContext(appengine.AppID(c), client)
 
 	gs := &GStorage{
-		c:      c,
 		ctx:    ctx,
 		bucket: bucketName,
 	}
@@ -110,16 +113,16 @@ func (gs *GStorage) CopyBlob(src appengine.BlobKey, v ImageBlober) (appengine.Bl
 	_, err = storage.CopyObject(gs.ctx, gs.bucket, srcName, sObj)
 
 	gcsFilename := "/" + strings.Join([]string{"gs", sObj.Bucket, sObj.Name}, "/")
-	return blobstore.BlobKeyForFile(gs.c, gcsFilename)
+	return blobstore.BlobKeyForFile(gs.ctx, gcsFilename)
 }
 
 func (gs *GStorage) ReadBlobKey(src appengine.BlobKey) (*storage.Object, error) {
-	info, err := blobstore.Stat(gs.c, src)
+	info, err := blobstore.Stat(gs.ctx, src)
 	if err != nil {
 		return nil, err
 	}
 
-	bucket := appengine.DefaultVersionHostname(gs.c)
+	bucket := appengine.DefaultVersionHostname(gs.ctx)
 	name := strings.TrimPrefix(info.ObjectName, "/"+bucket+"/")
 
 	return storage.StatObject(gs.ctx, bucket, name)

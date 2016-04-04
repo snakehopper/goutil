@@ -37,7 +37,7 @@ func NewGStorage(c context.Context) (*GStorage, error) {
 		return nil, err
 	}
 
-	ctx := cloud.NewContext(appengine.AppID(c), client)
+	ctx := cloud.WithContext(c, appengine.AppID(c), client)
 
 	gs := &GStorage{
 		ctx:    ctx,

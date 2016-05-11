@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -61,4 +62,23 @@ func GetJson(client *http.Client, url string, v interface{}) error {
 	d := json.NewDecoder(resp.Body)
 
 	return d.Decode(v)
+}
+
+func PostJson(client *http.Client, url string, v interface{}) ([]byte, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Post(url, "application/json", bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
 }
